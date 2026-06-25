@@ -59,6 +59,11 @@
 
   "data_sources": {
     "quote_provider_priority": ["akshare", "eastmoney"],
+    "news_rss": [
+      "http://www.people.com.cn/rss/finance.xml",
+      "https://rss.sina.com.cn/roll/finance/hot_roll.xml"
+    ],
+    "_news_rss说明": "免费公开新闻 RSS（无需 API key）。源会失效/改版，失败自动跳过并回退本地 market_feed.json；可自行增删可用的免费源。",
     "news_whitelist": [
       "xinhuanet.com", "people.com.cn", "gov.cn", "csrc.gov.cn", "ndrc.gov.cn",
       "pbc.gov.cn", "sse.com.cn", "szse.cn", "cnstock.com", "cs.com.cn",
