@@ -1,0 +1,60 @@
+name: Refresh ETF report to Pages
+
+# 每日联网重新生成 ETF 分析网页并发布到 GitHub Pages。
+# 注意：schedule 定时触发只对“默认分支(main)”上的工作流生效；在开发分支上
+#       可用 push / 手动 workflow_dispatch 先看到构建效果。要真正每天自动刷新，
+#       需把本工作流合并到默认分支，并在仓库 Settings → Pages 把 Source 选为
+#       “GitHub Actions”。
+
+on:
+  schedule:
+    - cron: "0 1 * * *"   # 每天 01:00 UTC ≈ 北京时间 09:00
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+      - claude/etf-stock-selection-method-f9fjwl
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# 同一时间只跑一个部署，新构建取消进行中的旧构建
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build-deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      # 轻量依赖：feedparser 提升 RSS 解析；报价走标准库东方财富接口，
+      # 不强装较重的 akshare，保证 CI 快且稳。装不上也不致命。
+      - name: Install optional deps
+        run: pip install feedparser || true
+
+      - name: Generate mobile report
+        run: python etf_selection.py --html public/index.html
+
+      - uses: actions/configure-pages@v5
+        with:
+          # 若仓库尚未开启 Pages，则自动启用（无需手动进 Settings）
+          enablement: true
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: public
+
+      - name: Deploy to GitHub Pages
+        id: deploy
+        uses: actions/deploy-pages@v4

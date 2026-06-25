@@ -1,0 +1,101 @@
+{
+  "_说明": "ETF 选股方法外置配置。改这里即可调参，无需改代码。所有阈值/权重均为可调参数，非投资建议。",
+
+  "universe": [
+    {"code": "510050", "name": "上证50ETF",      "category": "宽基",     "index": "000016"},
+    {"code": "159901", "name": "深证100ETF",     "category": "宽基",     "index": "399330"},
+    {"code": "510330", "name": "沪深300ETF",     "category": "宽基",     "index": "000300"},
+    {"code": "159920", "name": "恒生ETF",         "category": "跨境",     "index": "HSI"},
+    {"code": "513180", "name": "恒生科技ETF",     "category": "跨境",     "index": "HSTECH"},
+    {"code": "512800", "name": "银行ETF",         "category": "行业主题", "index": "399986"},
+    {"code": "512000", "name": "券商ETF",         "category": "行业主题", "index": "399975"},
+    {"code": "518880", "name": "黄金ETF",         "category": "商品",     "index": "AU9999"},
+    {"code": "561560", "name": "电力ETF",         "category": "行业主题", "index": "930713"},
+    {"code": "159611", "name": "电网设备ETF",     "category": "行业主题", "index": "931160"},
+    {"code": "159819", "name": "人工智能ETF",     "category": "行业主题", "index": "930713"},
+    {"code": "512200", "name": "房地产ETF",       "category": "行业主题", "index": "399393"},
+    {"code": "515030", "name": "新能源车ETF",     "category": "行业主题", "index": "399976"},
+    {"code": "159996", "name": "家电ETF",         "category": "行业主题", "index": "930697"}
+  ],
+  "_universe说明": "index 为对应指数代码（用于估值分位取数）。跨境/商品的 index 仅作占位，估值因子可能取不到→自动打标记。159611 电网设备ETF 代码请按自己持仓核对。",
+
+  "weights": {
+    "trend_momentum":    0.22,
+    "relative_strength": 0.18,
+    "valuation":         0.20,
+    "fund_flow":         0.12,
+    "liquidity":         0.08,
+    "risk":              0.12,
+    "market_sentiment":  0.08
+  },
+  "_weights说明": "七因子权重，和不必为1（内部会归一）。market_sentiment 故意取小权重，防消息面过拟合。",
+
+  "rating_thresholds": {"strong": 70, "neutral": 45},
+  "_rating说明": "综合分 ≥strong 记为「强」，≥neutral 记为「中」，否则「弱」。",
+
+  "factor_params": {
+    "momentum_lookback_days": 60,
+    "relative_benchmark": "510330",
+    "valuation_lookback_years": 5,
+    "volatility_lookback_days": 60,
+    "turnover_good_range": [1.0, 8.0]
+  },
+  "_factor说明": "动量回看天数、相对强弱基准（沪深300）、估值分位回看年数、波动率窗口、健康换手率区间(%)。",
+
+  "portfolio_limits": {
+    "single_etf_max": 0.25,
+    "single_sector_max": 0.40,
+    "position_range": [0.50, 0.85],
+    "min_cash_buffer": 0.10
+  },
+  "_limits说明": "组合硬约束：单只ETF≤25%、单行业≤40%、总仓位建议区间50%~85%、现金缓冲≥10%。超限即触发风险提示。",
+
+  "core_satellite_template": {
+    "core_broad_base": [0.50, 0.70],
+    "satellite_per_etf_max": 0.15,
+    "cash_buffer": [0.10, 0.20]
+  },
+  "_core_satellite说明": "核心-卫星基准：宽基核心50%~70%，单只卫星(行业主题)≤15%，现金/择时缓冲10%~20%。",
+
+  "data_sources": {
+    "quote_provider_priority": ["akshare", "eastmoney"],
+    "news_rss": [
+      "http://www.people.com.cn/rss/finance.xml",
+      "https://rss.sina.com.cn/roll/finance/hot_roll.xml"
+    ],
+    "_news_rss说明": "免费公开新闻 RSS（无需 API key）。源会失效/改版，失败自动跳过并回退本地 market_feed.json；可自行增删可用的免费源。",
+    "news_whitelist": [
+      "xinhuanet.com", "people.com.cn", "gov.cn", "csrc.gov.cn", "ndrc.gov.cn",
+      "pbc.gov.cn", "sse.com.cn", "szse.cn", "cnstock.com", "cs.com.cn",
+      "stcn.com", "yicai.com", "eastmoney.com", "10jqka.com.cn",
+      "sina.com.cn", "wallstreetcn.com", "reuters.com", "bloomberg.com"
+    ],
+    "request_timeout_sec": 8,
+    "cache_ttl_hours": 12
+  },
+  "_data_sources说明": "行情优先级、新闻可信源白名单（仅采信这些域名）、请求超时、缓存有效期。",
+
+  "validation": {
+    "recency_hours": 48,
+    "min_corroboration_sources": 2,
+    "title_dedup_similarity": 0.6,
+    "sentiment_confidence_floor": 0.5
+  },
+  "_validation说明": "真实性验证：仅保留近48h、同一事件需≥2个独立可信源交叉确认才算「已验证」、标题相似度≥0.6判为重复合并、情绪因子置信度≥0.5才参与打分。此为启发式可信度评估，非事实核查。",
+
+  "keyword_etf_map": {
+    "降准|信贷|净息差|金融让利|银行板块|贷款利率": ["512800"],
+    "券商|资本市场|IPO|注册制|并购重组|活跃资本市场": ["512000"],
+    "AI|人工智能|算力|大模型|芯片|GPU|英伟达": ["159819"],
+    "特高压|电网|输配电|电力设备|智能电网": ["159611"],
+    "电力|绿电|火电|核电|电价|用电量": ["561560"],
+    "新能源车|动力电池|锂电|充电桩|汽车以旧换新": ["515030"],
+    "房地产|地产|楼市|房贷|保交楼|因城施策": ["512200"],
+    "家电|以旧换新|消费补贴|家电下乡": ["159996"],
+    "黄金|避险|美元|实际利率|央行购金": ["518880"],
+    "美联储|加息|降息预期|纳指|标普|美股|非农|CPI": ["513180", "159819", "515030"],
+    "恒生|港股|南向资金|香港|互联互通": ["159920", "513180"],
+    "宽基|指数|权重股|A股整体|稳增长": ["510050", "159901", "510330"]
+  },
+  "_keyword说明": "关键词(|分隔)→受影响ETF代码。新闻命中关键词即映射到对应ETF，未命中则丢弃。"
+}

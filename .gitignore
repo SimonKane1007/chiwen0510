@@ -21,3 +21,13 @@ rad.json
 *.flf
 #Test results file
 TestResults.xml
+
+### ETF 工具运行产物（不入库）###
+# 运行时生成的市场新闻兜底样例（首次运行自动生成，请按需替换为真实数据）
+market_feed.json
+# 当日因子缓存
+.etf_cache/
+# 生成的手机网页（由 GitHub Actions 经 artifact 部署，不入库）
+public/
+__pycache__/
+*.pyc
