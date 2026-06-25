@@ -27,5 +27,7 @@ TestResults.xml
 market_feed.json
 # 当日因子缓存
 .etf_cache/
+# 生成的手机网页（由 GitHub Actions 经 artifact 部署，不入库）
+public/
 __pycache__/
 *.pyc

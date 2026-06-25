@@ -17,8 +17,11 @@ etf_selection.py —— ETF 多因子打分 / 组合诊断 主程序
 
 from __future__ import annotations
 
+import argparse
 import unicodedata
 from dataclasses import dataclass, field
+from datetime import datetime
+from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
 from data_provider import (FactorBundle, OK, fetch_benchmark_closes,
@@ -332,13 +335,9 @@ def demo_holdings(cfg: dict) -> Tuple[List[Holding], float]:
     return holdings, cash
 
 
-def main() -> None:
-    cfg = load_config()
-
-    print("\n" + "=" * 64)
-    print("           ETF 多因子选股与组合诊断  ·  分析框架")
-    print("=" * 64 + "\n")
-
+def build_all(cfg: dict) -> Tuple[List[ETFScore], PortfolioDiagnosis, List[Holding], float, MarketContext]:
+    """集中执行计算（建市场背景 → 取因子 → 打分 → demo 持仓 → 诊断），
+    供终端输出与 HTML 渲染共用，确保两种载体同源数据。"""
     # 市场背景（联网+验证，失败回退本地）
     ctx = build_market_context(cfg)
 
@@ -348,18 +347,46 @@ def main() -> None:
 
     # 打分排序
     scores = score_universe(cfg, bundles, ctx)
-    _print_scores(scores)
 
     # 组合诊断
     holdings, cash = demo_holdings(cfg)
     diag = diagnose_portfolio(holdings, cash, cfg)
+
+    return scores, diag, holdings, cash, ctx
+
+
+def _run_terminal(scores, diag, ctx) -> None:
+    print("\n" + "=" * 64)
+    print("           ETF 多因子选股与组合诊断  ·  分析框架")
+    print("=" * 64 + "\n")
+    _print_scores(scores)
     _print_diagnosis(diag)
-
-    # 市场简报（界面底部）
     _print_market(ctx)
-
     print("\n⚠ 免责声明：本输出为分析框架与客观规则信号，非投资建议；"
           "市场有风险，决策需独立判断。\n")
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description="ETF 多因子打分 / 组合诊断")
+    parser.add_argument(
+        "--html", nargs="?", const="public/index.html", default=None, metavar="PATH",
+        help="生成手机自适应网页到 PATH（默认 public/index.html），不加此参数则输出终端界面",
+    )
+    args = parser.parse_args()
+
+    cfg = load_config()
+    scores, diag, holdings, cash, ctx = build_all(cfg)
+
+    if args.html is not None:
+        from report_html import render
+        generated_at = datetime.now().strftime("%Y-%m-%d %H:%M")
+        html = render(scores, diag, holdings, cash, ctx, cfg, generated_at)
+        out = Path(args.html)
+        out.parent.mkdir(parents=True, exist_ok=True)
+        out.write_text(html, encoding="utf-8")
+        print(f"已生成 HTML 报告：{out}")
+    else:
+        _run_terminal(scores, diag, ctx)
 
 
 if __name__ == "__main__":
